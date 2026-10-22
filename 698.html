@@ -52,6 +52,7 @@ h1 { font-family: var(--display); font-weight: 800; font-size: 34px; line-height
 .fant { font-weight: 700; font-size: 16px; }
 .razao { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
 .end { font-size: 12.5px; color: var(--muted); }
+.vezes { font-size: 11px; font-weight: 700; color: var(--green); border: 1px solid var(--green); border-radius: 4px; padding: 0 6px; margin-left: auto; white-space: nowrap; }
 .tag { font-size: 11px; font-weight: 700; color: #fff; background: var(--red); border-radius: 4px; padding: 1px 6px; margin-left: 4px; }
 .botoes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
 .botoes button { border: 1.5px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 8px; padding: 9px 0; font: 700 14px var(--body); cursor: pointer; }
@@ -83,7 +84,7 @@ button:focus-visible, #busca:focus-visible { outline: 3px solid var(--gold); out
   <div class="filtros" id="filtros" role="group" aria-label="Filtrar"></div>
 </div></div>
 <main class="wrap">
-  <p class="dica">Toque no dia para marcar. Toque de novo para desmarcar. Suas escolhas ficam salvas neste celular.</p>
+  <p class="dica">Toque nos dias de visita de cada cliente: pode marcar mais de um (ex.: Seg, Qua e Sex). Toque de novo para desmarcar. Suas escolhas ficam salvas neste celular.</p>
   <div id="lista"></div>
 </main>
 <div class="barra"><div class="wrap">
@@ -101,6 +102,9 @@ const COR = d => `var(--${d})`;
 const CHAVE = "roteiro_" + DADOS.rca;
 let escolha = {};
 try { escolha = JSON.parse(localStorage.getItem(CHAVE) || "{}") || {}; } catch (e) { escolha = {}; }
+// cada cliente guarda uma lista de dias (versão antiga guardava um dia só)
+for (const k in escolha) { if (!Array.isArray(escolha[k])) escolha[k] = [escolha[k]]; if (!escolha[k].length) delete escolha[k]; }
+const tem = (c, d) => (escolha[c] || []).includes(d);
 let filtro = "todos", termo = "";
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -108,19 +112,20 @@ const titulo = c => c.fantasia || c.bairro;
 function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(escolha)); } catch (e) {} }
 function resumo() {
   const n = {}; DIAS.forEach(([d]) => n[d] = 0);
-  Object.values(escolha).forEach(d => { if (n[d] !== undefined) n[d]++; });
+  Object.values(escolha).forEach(ds => ds.forEach(d => { if (n[d] !== undefined) n[d]++; }));
   const sem = DADOS.clientes.length - Object.keys(escolha).length;
   $("resumo").innerHTML = DIAS.map(([d, a]) => `<div class="dr"><b>${n[d]}</b><span>${a}</span></div>`).join("") + `<div class="dr"><b>${sem}</b><span>Sem dia</span></div>`;
+  const visitas = DIAS.reduce((s, [d]) => s + n[d], 0);
   const feitos = Object.keys(escolha).length;
   $("feitos").textContent = feitos;
-  $("falta").textContent = sem ? `faltam ${sem}` : "todos com dia ✓";
+  $("falta").textContent = (sem ? `faltam ${sem}` : "todos com dia ✓") + ` · ${visitas} visitas/semana`;
   $("trilho").style.width = (feitos / DADOS.clientes.length * 100) + "%";
   $("zap").href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto());
 }
 function texto() {
   let t = `*Roteiro de visitas · RCA ${DADOS.rca} ${DADOS.nome}*\n`;
   DIAS.forEach(([d, , nome]) => {
-    const l = DADOS.clientes.filter(c => escolha[c.cod] === d);
+    const l = DADOS.clientes.filter(c => tem(c.cod, d));
     if (!l.length) return;
     t += `\n*${nome.toUpperCase()}* (${l.length})\n` + l.map(c => `• ${c.cod} ${titulo(c)} – ${c.bairro}`).join("\n") + "\n";
   });
@@ -136,7 +141,7 @@ function lista() {
   const q = termo.trim().toUpperCase();
   const vis = DADOS.clientes.filter(c => {
     if (filtro === "sem" && escolha[c.cod]) return false;
-    if (filtro !== "todos" && filtro !== "sem" && escolha[c.cod] !== filtro) return false;
+    if (filtro !== "todos" && filtro !== "sem" && !tem(c.cod, filtro)) return false;
     if (q && !(c.cod + " " + c.fantasia + " " + c.razao + " " + c.bairro).toUpperCase().includes(q)) return false;
     return true;
   });
@@ -144,12 +149,12 @@ function lista() {
   const grupos = {};
   vis.forEach(c => (grupos[c.bairro + " · " + c.cidade] ||= []).push(c));
   $("lista").innerHTML = Object.entries(grupos).map(([b, cs]) => `<section class="bairro"><h2>${esc(b)} <small>${cs.length} cliente${cs.length > 1 ? "s" : ""}</small></h2>` +
-    cs.map(c => { const d = escolha[c.cod];
+    cs.map(c => { const ds = escolha[c.cod] || []; const d = ds[0];
       return `<article class="pdv${d ? " marcado" : ""}" style="${d ? "--cor:" + COR(d) : ""}">
-        <div class="l1"><span class="cod">${c.cod}</span><span class="fant">${esc(titulo(c))}</span>${c.bloq ? '<span class="tag">BLOQUEADO</span>' : ""}</div>
+        <div class="l1"><span class="cod">${c.cod}</span><span class="fant">${esc(titulo(c))}</span>${c.bloq ? '<span class="tag">BLOQUEADO</span>' : ""}${ds.length > 1 ? `<span class="vezes">${ds.length}x na semana</span>` : ""}</div>
         <div class="razao">${esc(c.razao)}</div>
         <div class="end">${esc(c.endereco)} · ${esc(c.bairro)}${c.ult ? " · últ. compra " + c.ult : ""}</div>
-        <div class="botoes">${DIAS.map(([k, a]) => `<button type="button" data-c="${c.cod}" data-d="${k}" style="--cor:${COR(k)}" aria-pressed="${d === k}">${a}</button>`).join("")}</div>
+        <div class="botoes">${DIAS.map(([k, a]) => `<button type="button" data-c="${c.cod}" data-d="${k}" style="--cor:${COR(k)}" aria-pressed="${ds.includes(k)}">${a}</button>`).join("")}</div>
       </article>`; }).join("") + `</section>`).join("");
 }
 document.addEventListener("click", e => {
@@ -157,7 +162,9 @@ document.addEventListener("click", e => {
   if (!b) return;
   if (b.dataset.c) {
     const c = b.dataset.c, d = b.dataset.d;
-    if (escolha[c] === d) delete escolha[c]; else escolha[c] = d;
+    const ds = escolha[c] || [];
+    escolha[c] = ds.includes(d) ? ds.filter(x => x !== d) : DIAS.map(([k]) => k).filter(k => k === d || ds.includes(k));
+    if (!escolha[c].length) delete escolha[c];
     salvar(); resumo(); lista();
   } else if (b.dataset.f) { filtro = b.dataset.f; filtros(); lista(); }
   else if (b.id === "copiar") {
