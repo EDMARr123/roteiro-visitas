@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Roteiro 806 · Marcio Gabriel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: lista de PDVs agrupada por bairro; cada PDV com os 5 dias; barra fixa embaixo com resumo e envio */
+:root {
+  --bg: #f4f1ee; --surface: #ffffff; --ink: #221a16; --muted: #75665f; --line: #e5dbd4;
+  --red: #c8102e; --gold: #f2b705; --green: #0f6b34; --chip: #efe7e2;
+  --seg: #c8102e; --ter: #d9730d; --qua: #b08900; --qui: #1f7a4d; --sex: #2563b0;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16110f; --surface: #211916; --ink: #f3eae5; --muted: #b3a39b; --line: #3a2d28; --chip: #2e231f;
+  --red: #e2405a; --green: #5fd38d; --seg: #e2405a; --ter: #f0913a; --qua: #e0b93a; --qui: #4fc286; --sex: #5b9bef; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #16110f; --surface: #211916; --ink: #f3eae5; --muted: #b3a39b; --line: #3a2d28; --chip: #2e231f;
+  --red: #e2405a; --green: #5fd38d; --seg: #e2405a; --ter: #f0913a; --qua: #e0b93a; --qui: #4fc286; --sex: #5b9bef; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.35; padding-bottom: 150px; }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); }
+header.topo { background: var(--red); color: #fff; }
+header.topo .wrap { padding-block: calc(16px + env(safe-area-inset-top, 0px)) 16px; }
+.eyebrow { font-family: var(--display); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: 13px; opacity: .9; }
+h1 { font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1; margin: 4px 0 6px; text-transform: uppercase; }
+.sub { font-size: 14px; opacity: .92; margin: 0; }
+.dias-resumo { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 14px; }
+.dr { background: rgba(255,255,255,.14); border-radius: 8px; padding: 6px 4px; text-align: center; }
+.dr b { display: block; font-family: var(--display); font-size: 24px; line-height: 1; }
+.dr span { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.ferramentas { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.ferramentas .wrap { padding-block: 10px; display: grid; gap: 8px; }
+#busca { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+.filtros { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.filtros button { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px; font: 600 13px var(--body); cursor: pointer; }
+.filtros button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.dica { font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+.bairro { margin-top: 16px; }
+.bairro h2 { font-family: var(--display); font-weight: 800; font-size: 18px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 6px; color: var(--muted); }
+.bairro h2 small { font-family: var(--body); font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 12px; }
+.pdv { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+.pdv.marcado { border-color: var(--cor, var(--line)); box-shadow: inset 4px 0 0 var(--cor, transparent); }
+.l1 { display: flex; gap: 8px; align-items: baseline; }
+.cod { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); font-size: 13px; }
+.fant { font-weight: 700; font-size: 16px; }
+.razao { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+.end { font-size: 12.5px; color: var(--muted); }
+.vezes { font-size: 11px; font-weight: 700; color: var(--green); border: 1px solid var(--green); border-radius: 4px; padding: 0 6px; margin-left: auto; white-space: nowrap; }
+.tag { font-size: 11px; font-weight: 700; color: #fff; background: var(--red); border-radius: 4px; padding: 1px 6px; margin-left: 4px; }
+.botoes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+.botoes button { border: 1.5px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 8px; padding: 9px 0; font: 700 14px var(--body); cursor: pointer; }
+.botoes button[aria-pressed="true"] { background: var(--cor); border-color: var(--cor); color: #fff; }
+button:focus-visible, #busca:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 18px rgba(0,0,0,.08); }
+.barra .wrap { padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; }
+.prog { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.prog b { color: var(--ink); }
+.trilho { height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; }
+.trilho i { display: block; height: 100%; width: 0; background: var(--green); transition: width .2s; }
+.acoes { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.acoes a, .acoes button { text-align: center; text-decoration: none; border-radius: 10px; padding: 12px; font: 700 15px var(--body); border: 0; cursor: pointer; }
+.zap { background: #1f9d55; color: #fff; }
+.copiar { background: var(--chip); color: var(--ink); }
+.vazio { text-align: center; color: var(--muted); padding: 30px 0; }
+@media (prefers-reduced-motion: reduce) { .trilho i { transition: none; } }
+</style>
+</head>
+<body>
+<header class="topo"><div class="wrap">
+  <div class="eyebrow">Roteiro de visitas · Sup. Richard Fernandes</div>
+  <h1>806 · Marcio Gabriel</h1>
+  <p class="sub">Escolha o dia de visita de cada cliente (segunda a sexta). 101 clientes.</p>
+  <div class="dias-resumo" id="resumo"></div>
+</div></header>
+<div class="ferramentas"><div class="wrap">
+  <input id="busca" type="search" placeholder="Buscar por código, nome ou bairro" autocomplete="off">
+  <div class="filtros" id="filtros" role="group" aria-label="Filtrar"></div>
+</div></div>
+<main class="wrap">
+  <p class="dica">Toque nos dias de visita de cada cliente: pode marcar mais de um (ex.: Seg, Qua e Sex). Toque de novo para desmarcar. Suas escolhas ficam salvas neste celular.</p>
+  <div id="lista"></div>
+</main>
+<div class="barra"><div class="wrap">
+  <div class="prog"><span><b id="feitos">0</b> de 101 com dia escolhido</span><span id="falta"></span></div>
+  <div class="trilho"><i id="trilho"></i></div>
+  <div class="acoes">
+    <a class="zap" id="zap" href="#" target="_blank" rel="noopener">Enviar no WhatsApp</a>
+    <button class="copiar" id="copiar" type="button">Copiar</button>
+  </div>
+</div></div>
+<script>
+const DADOS = {"rca": "806", "nome": "Marcio Gabriel", "clientes": [{"cod": "3260", "razao": "RAIMUNDO COELHO PINTO-ME", "fantasia": "CASA DE CARNE FO", "endereco": "AV 4 RADIAL QD E1 LT 01 SN", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "01/08/2026", "bloq": false}, {"cod": "3396", "razao": "CLAYTON JOSE GONCALVES EIRELI - M", "fantasia": "CARNE DE SOL 1008", "endereco": "AL LEOPOLDO DE BULHOES QUA 0", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "22/10/2026", "bloq": false}, {"cod": "3402", "razao": "PEROLAS DO SABOR RESTAURANTE L", "fantasia": "PEROLAS DO SABO", "endereco": "AL COUTO MAGALHAES 844", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "3460", "razao": "LIRIOS GRILL RESTAURANTE LTDA - M", "fantasia": "LIRIOS GRILL", "endereco": "AV PRIMEIRA RADIAL N849 QUAD SN", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "15/12/2020", "bloq": true}, {"cod": "5430", "razao": "ESQUINA DA PICANHA BAR E RESTAUR", "fantasia": "ESQUINA DA PICANH", "endereco": "AV 2 RADIAL QUADRA58 LOTE 19 77", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "09/10/2019", "bloq": true}, {"cod": "5693", "razao": "PRATOS RESTAURANTE LTDA", "fantasia": "PRATOS RESTAURA", "endereco": "AV BELA VISTA QUADRA18 LOTE 105", "bairro": "JD DAS ESMERAL", "cidade": "GOIANIA", "ult": "19/09/2026", "bloq": true}, {"cod": "6957", "razao": "TEMPERO GOIANO RESTAURANTE LTD", "fantasia": "RESTAURANTE SAB", "endereco": "AV T-63 QD.S-17 LT.27 209", "bairro": "ST. BELA VISTA", "cidade": "GOIANIA", "ult": "24/10/2026", "bloq": false}, {"cod": "7966", "razao": "IMPERIO COMERCIO DE PRODUTOS DE", "fantasia": "PANIF. IMPERIO", "endereco": "R 1008 QD 25 LT 12 10", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "14/10/2026", "bloq": false}, {"cod": "9339", "razao": "CRISTIENY SIQUEIRA FLEURY DE LEMO", "fantasia": "LEMA SPL", "endereco": "AV TERCEIRA RADIAL QD 92 LT12 322", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "16/09/2026", "bloq": false}, {"cod": "10215", "razao": "HAMILTON BERNADO DOS SANTOS 016", "fantasia": "RESTAURANTE SOL", "endereco": "RUA SAO LUIZ QD 05 LT 01 SN", "bairro": "JD DAS ESMERAL", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "10555", "razao": "PAI E FILHO RESTAURANTES E SIMILA", "fantasia": "RESTAURANTE E LA", "endereco": "PÇ ISIDORIA DE ALMEIDA BARBO SN", "bairro": "PEDRO LUDOVICO", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "10556", "razao": "ELIZABETE CAMARGO MACHADO", "fantasia": "GRAO DE TRIGO", "endereco": "ALAMEDA EMILIO POVOA QD 64 128", "bairro": "VILA REDENCAO", "cidade": "GOIANIA", "ult": "13/10/2026", "bloq": false}, {"cod": "13483", "razao": "QUITANDERIA ALIMENTOS LTDA - ME", "fantasia": "A QUITANDERIA", "endereco": "AV RUDA QD 38A LT 1 SALA 3 SN", "bairro": "VILA BRASILIA", "cidade": "APARECIDA DE GO99501-3334", "ult": "16/10/2026", "bloq": false}, {"cod": "13662", "razao": "ME PANIFICADORA LTDA - ME", "fantasia": "PANIF. DONA CANDI", "endereco": "R GUAPORE QD 06 LT 18 78", "bairro": "JD DAS ESMERAL", "cidade": "GOIANIA", "ult": "30/11/2017", "bloq": true}, {"cod": "14780", "razao": "RESTAURANTE BOTANICO LTDA - ME", "fantasia": "RESTAURANTE BOT", "endereco": "AV B QD 25 LT 02 263", "bairro": "JD SANTO ANTON", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "14784", "razao": "BOM LAPETI RESTAURANTE LTDA - ME", "fantasia": "BOM LAPETI RESTA", "endereco": "AV BELA VISTA COM RUA 36 QD 5 SN", "bairro": "CONJ LIBERDADE", "cidade": "APARECIDA DE GO99964-9969", "ult": "17/10/2026", "bloq": false}, {"cod": "15464", "razao": "EMPORIO SINAI LTDA - ME", "fantasia": "EMPORIO SINAL", "endereco": "AV BOTAFOGO QD 01 LT 12 34", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "22/10/2022", "bloq": true}, {"cod": "16344", "razao": "RUTH FERREIRA GONCALVES 2827018", "fantasia": "ESQUINA GOURMET", "endereco": "R 1040 QD 80 LT 01 SN", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "20/10/2026", "bloq": false}, {"cod": "17894", "razao": "M & T LANCHES LTDA - ME", "fantasia": "PASTELARIA AKIRA", "endereco": "AV CIRCULAR QD 61 LT 11 LOJA 0 211", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "19627", "razao": "DIVINO CAITANO - EIRELI", "fantasia": "EUZANE SUP.", "endereco": "R S 5 QD 26 LT 20 479", "bairro": "ST BELA VISTA", "cidade": "GOIANIA", "ult": "04/04/2023", "bloq": true}, {"cod": "20754", "razao": "PANIFICADORA PAO DE TRIGO LTDA", "fantasia": "PANIF. PARQUE PAE", "endereco": "RUA 1028 QD.66 LT.2 115", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "07/10/2026", "bloq": false}, {"cod": "20907", "razao": "DAVID FERNANDO ROMEIRO 87352982", "fantasia": "TAIFA GASTRONOM", "endereco": "RUA 1013 QD.40 LT.20 - CASA 3 512", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "16/10/2026", "bloq": false}, {"cod": "21452", "razao": "RESTAURANTE ZERO GRAU EIRELI - E", "fantasia": "RESTAURANTE ZER", "endereco": "RUA FORTALEZA QD.40 LT.03/04 SN", "bairro": "JARDIM DAS ESM", "cidade": "APARECIDA DE GO32804111", "ult": "27/10/2026", "bloq": false}, {"cod": "21463", "razao": "VANDER DE PAULA QUIRINO - ME", "fantasia": "DISQUINHO ALIMEN", "endereco": "RUA DA BAHIA QD.45 LT.20 SN", "bairro": "JARDIM DAS ESM", "cidade": "APARECIDA DE GO6298685475", "ult": "20/10/2026", "bloq": false}, {"cod": "21586", "razao": "BAR E RESTAURANTE MOURAO FILHO", "fantasia": "MOURAO FILHO BAR", "endereco": "RUA J2 QD.77 LT. 18 A 21 SN", "bairro": "MANSOES PARAIS", "cidade": "APARECIDA DE GO984046064", "ult": "29/08/2019", "bloq": true}, {"cod": "23181", "razao": "PANELINHA GRILL LTDA", "fantasia": "PANELINHA GRILL", "endereco": "R 1038 QD.83 LT.11 /SALA 04 51", "bairro": "PEDRO LUDOVICO", "cidade": "GOIANIA", "ult": "01/06/2022", "bloq": true}, {"cod": "23273", "razao": "JEOVA JIRE ALIMENTOS EIRELI", "fantasia": "JEOVA JIREH CASA", "endereco": "ALAMEDA DO CONTORNO QD 57 2456", "bairro": "JARDIM SANTO A", "cidade": "GOIANIA", "ult": "21/10/2026", "bloq": false}, {"cod": "23477", "razao": "RESTAURANTE AREIAO EIRELI", "fantasia": "AREIAO RESTAURAN", "endereco": "ALAMEDA COUTO MAGALHAES Q SN", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "20/10/2026", "bloq": false}, {"cod": "23898", "razao": "DONA LEDA PAES LTDA", "fantasia": "DONA LEDA", "endereco": "RUA 1025 QD 65 LT 01 SALA 03 460", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "19/10/2026", "bloq": false}, {"cod": "25303", "razao": "DIELLY CRISTINA DE SOUSA CRUZ SAN", "fantasia": "A MODA RESTAURA", "endereco": "AV PROFESSOR NAMI JAFET QD SN", "bairro": "VL MARIANA", "cidade": "APARECIDA DE GO99630-8822", "ult": "27/10/2026", "bloq": false}, {"cod": "27544", "razao": "THIAGO CESAR LOPES-ME", "fantasia": "EMPORIO CASA BLA", "endereco": "AV ENGENHEIRO EURICO VIANA 397", "bairro": "VL MARIA JOSE", "cidade": "GOIANIA", "ult": "21/08/2020", "bloq": true}, {"cod": "28010", "razao": "OBRAS SOCIAIS DO GRUPO ESPIRITA", "fantasia": "LAR MAE ZEFERINA", "endereco": "AV BOTAFOGO QD AREA LT AREA 599", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "05/10/2026", "bloq": false}, {"cod": "28218", "razao": "COMERCIAL MARINS ROCHA LTDA ME", "fantasia": "NUTRIGUSTE REFEI", "endereco": "AV FEIRA DE SANTANA QD 162 LT 762", "bairro": "PARQUE AMAZON", "cidade": "GOIANIA", "ult": "26/10/2026", "bloq": false}, {"cod": "28219", "razao": "COMERCIAL MARINS ROCHA EIRELI ME", "fantasia": "NUTRIGUSTE REFEI", "endereco": "ESTRADA GOIANIA A NOVA VENE SN", "bairro": "ZONA RURAL", "cidade": "SANTO ANTONIO", "ult": "22/10/2026", "bloq": false}, {"cod": "28401", "razao": "PANIFICADORA DA FAMILIA EIRELI", "fantasia": "PANIF. DA FAMILIA", "endereco": "AV FLORIANOPOLIS QD 03 LT 20 154", "bairro": "JD DAS ESMERAL", "cidade": "GOIANIA", "ult": "14/10/2026", "bloq": false}, {"cod": "30046", "razao": "RESTAURANTE FILE BRASIL EIRELI", "fantasia": "RESTAURANTE FILE", "endereco": "R CAMPOS BELOS QD 97 LT 003E SN", "bairro": "VL SAO TOMAZ", "cidade": "APARECIDA DE GO30977005", "ult": "20/10/2026", "bloq": false}, {"cod": "31691", "razao": "CASA DE CARNES UNI ALIMENTOS GRA", "fantasia": "UNI ALIMENTOS", "endereco": "AV FRANCISCO PAULO RAMOS Q 114", "bairro": "VL PADRE ETERN", "cidade": "TRINDADE", "ult": "24/06/2020", "bloq": true}, {"cod": "33354", "razao": "INDUSTRIA E COMERCIO DE ALIMENTO", "fantasia": "CASA DE CARNES B", "endereco": "ALA LEOPOLDO DE BULHOES QD 151", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "17/12/2020", "bloq": true}, {"cod": "37524", "razao": "FERNANDO ROCHA 80827039115", "fantasia": "EL SHADAY", "endereco": "AV. SAO JOAO QD 12 LT 09 SN", "bairro": "JD NOVA ERA", "cidade": "APARECIDA DE G", "ult": "02/10/2026", "bloq": false}, {"cod": "39695", "razao": "BONAPETTI INDUSTRIA DE ALIMENTOS", "fantasia": "BONAPETTI ALIMEN", "endereco": "R. 1012 QD 34 LT 34 386", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "21/10/2026", "bloq": false}, {"cod": "40437", "razao": "VANESSA MATEUCCI VICENTE DA SILV", "fantasia": "CASAMIA RESTAURA", "endereco": "AV. CIRCULAR QD 58 LT 06 1215", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "05/10/2026", "bloq": false}, {"cod": "41339", "razao": "D A CHICKEN FRANQUIAS LTDA", "fantasia": "D A CHICKEN", "endereco": "AV.PRIMEIRA RADIAL QD 25 LT 09 951", "bairro": "ST. PEDRO LUDO", "cidade": "GOIANIA", "ult": "22/08/2022", "bloq": true}, {"cod": "42773", "razao": "PILAO BAR E RESTAURANTE LTDA", "fantasia": "PILAO UNIDADE 100", "endereco": "R 1008 QD. 20 LT.04 145", "bairro": "SET PEDRO LUDO", "cidade": "GOIANIA", "ult": "20/10/2026", "bloq": false}, {"cod": "45037", "razao": "GAVA ALIMENTOS LTDA", "fantasia": "PIZZARIA TIME EXPR", "endereco": "ALAMEDA LEOPOLDO DE BULHO 40", "bairro": "SET PEDRO LUDO", "cidade": "GOIANIA", "ult": "28/09/2026", "bloq": false}, {"cod": "54364", "razao": "RAIMUNDO MARTINS DOS SANTOS 310", "fantasia": "RESTAURANTE MAR", "endereco": "ALAMEDA EMLIO PVOA QD.74 LT. S/N", "bairro": "VILA REDENO", "cidade": "GOIANIA", "ult": "24/10/2026", "bloq": false}, {"cod": "55445", "razao": "LOPANE COMERCIO DE ALIMENTOS E", "fantasia": "LOPANE PADARIA E", "endereco": "RUA SÃO LUÍS n 50", "bairro": "ALTO DA GLORIA", "cidade": "GOIANIA", "ult": "28/08/2025", "bloq": true}, {"cod": "55710", "razao": "GOIANIA PESCADOS E BEBIDAS LTDA", "fantasia": "GOIANIA CAMAROES", "endereco": "R S1 QD 165 LT 13 788", "bairro": "SET BUENO", "cidade": "GOIANIA", "ult": "22/07/2026", "bloq": false}, {"cod": "60570", "razao": "50.571.426 AMANDA ELIZABETH RIBEIR", "fantasia": "MERCEARIA ARAUJO", "endereco": "R C-14 QD 26 LT 16 SN", "bairro": "JARDIM DAS CAS", "cidade": "APARECIDA DE GO62992893064", "ult": "16/10/2026", "bloq": false}, {"cod": "60870", "razao": "EMPORIO ADORO LTDA", "fantasia": "EMPORIO ADORO", "endereco": "AV BELA VISTA QD 18 LT 01 SL 02 1463", "bairro": "JD SANTO ANTON", "cidade": "GOIANIA", "ult": "22/05/2025", "bloq": true}, {"cod": "62099", "razao": "CENTRO DE DISTRIBUICAO BELA VISTA", "fantasia": "CD BELA VISTA ALIM", "endereco": "R S4 QD S20A LT 04 943", "bairro": "SET BELA VISTA", "cidade": "GOIANIA", "ult": "21/09/2026", "bloq": false}, {"cod": "62382", "razao": "CASA DE CARNES FORTALEZA SOCIED", "fantasia": "CASA DE CARNES F", "endereco": "AVENIDA CIRCULAR 237", "bairro": "SET PEDRO LUDO", "cidade": "GOIANIA", "ult": "18/09/2026", "bloq": false}, {"cod": "63591", "razao": "EDERSON FLAVIO DE MEDEIROS FONS", "fantasia": "RESTAURANTE 85 S", "endereco": "RUA 94 1132", "bairro": "ST. SUL", "cidade": "GOIANIA", "ult": "22/10/2026", "bloq": false}, {"cod": "64089", "razao": "V LIMA CONFEITARIA LTDA - ME", "fantasia": "SEMEANDO VERDAD", "endereco": "AVENIDA RUDA QD 38A LT 01 sn", "bairro": "VILA BRASILIA", "cidade": "APARECIDA DE G", "ult": "09/10/2026", "bloq": false}, {"cod": "64624", "razao": "CAMARGO RESTAURANTE E BAR LTDA", "fantasia": "RESTAURANTE CAM", "endereco": "AVENIDA BRASILIA QD 056 LT 000 sn", "bairro": "VILA BRASILIA", "cidade": "APARECIDA DE G", "ult": "27/02/2024", "bloq": true}, {"cod": "66761", "razao": "PONTO DA RESENHA LTDA", "fantasia": "PONTO DA RESENH", "endereco": "RUA S4 QD S9A LT 01 948", "bairro": "SET BELA VISTA", "cidade": "GOIANIA", "ult": "30/04/2026", "bloq": true}, {"cod": "67440", "razao": "NEIVA E IDELFONSO LTDA", "fantasia": "RESTAURANTE FILÉ", "endereco": "RUA GUIMARAES LIMA SN", "bairro": "VILA ROSA", "cidade": "GOIANIA", "ult": "16/05/2026", "bloq": false}, {"cod": "69067", "razao": "EMPORIO SAID LTDA", "fantasia": "EMPORIO SAID", "endereco": "RUA TAGUARI QD81 LT11 219", "bairro": "PARQUE AMAZON", "cidade": "GOIANIA", "ult": "26/10/2026", "bloq": false}, {"cod": "69726", "razao": "OBRAS SOCIAIS DO GRUPO ESPIRITA", "fantasia": "CASAS LARES IRMA", "endereco": "R SC 25 ESQ.C/ RUA SC 32 QD AR sn", "bairro": "SAO CARLOS", "cidade": "GOIANIA", "ult": "15/09/2026", "bloq": false}, {"cod": "69827", "razao": "49.529.195 THAYS ALVES DE LIMA", "fantasia": "RESTAURANTE DON", "endereco": "ALAMEDA GUIMARÃES NATAL 28", "bairro": "ST. MARISTA", "cidade": "GOIANIA", "ult": "21/10/2026", "bloq": false}, {"cod": "71137", "razao": "RESTAURANTE KEROMAIS LTDA", "fantasia": "RESTAURANTE KER", "endereco": "AV LAUDELINO GOMES QD 210 LT 101", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "73073", "razao": "KELPI INDUSTRIA E COMERCIO DE ALIM", "fantasia": "KELPI", "endereco": "AVENIDA C107 QD 329 LT 12 3873", "bairro": "BAIRRO JARDIM A", "cidade": "GOIANIA", "ult": "16/04/2026", "bloq": false}, {"cod": "73074", "razao": "55.329.252 DIRENE DE JESUS MAGALHA", "fantasia": "CANTINHO DO CAFE", "endereco": "RUA ELMAR CABRAL QD 14 LT 15 S/N", "bairro": "ST. SERRA DOUR", "cidade": "APARECIDA DE G", "ult": "25/09/2026", "bloq": false}, {"cod": "74863", "razao": "RR REFEICOES COLETIVAS LTDA", "fantasia": "RR REFEICOES COL", "endereco": "RUA CARIJOS QD 29 LT 13-E sn", "bairro": "JARDIM ELDORAD", "cidade": "APARECIDA DE GO6232411333", "ult": "15/10/2026", "bloq": true}, {"cod": "76178", "razao": "ADELICE ROSA DA COSTA 21544050100", "fantasia": "QUITANDAS DELICIA", "endereco": "RUA ARACAJU QD57 LT06 sn", "bairro": "VILA JOAO VAZ", "cidade": "GOIANIA", "ult": "03/07/2026", "bloq": false}, {"cod": "76798", "razao": "JA PANIFICACAO, ALIMENTOS E DERIV", "fantasia": "EMPORIO REDENCA", "endereco": "RUA L4 QD55 LT19 264", "bairro": "VI REDENCAO", "cidade": "GOIANIA", "ult": "21/10/2026", "bloq": false}, {"cod": "77377", "razao": "PROSA GOIANA COMERCIO LTDA", "fantasia": "PROSA GOIANA PAE", "endereco": "ALAEMDA LEOPOLDO DE BULHO 380", "bairro": "ST PEDRO LUDOV", "cidade": "GOIANIA", "ult": "21/10/2026", "bloq": false}, {"cod": "77430", "razao": "REGINA VERONICA LISBOA VIEIRA ROC", "fantasia": "CALDO E JANTINHA", "endereco": "ALAMEDA GUIMARAES NATAL QD 254", "bairro": "SETOR PEDRO LU", "cidade": "GOIANIA", "ult": "16/03/2026", "bloq": true}, {"cod": "77579", "razao": "57.742.804 JOAO MARCOS SALDANHA D", "fantasia": "EMPRIO SALDANHA", "endereco": "RUA 1018 QD44 LT19 440", "bairro": "SETOR PEDRO LU", "cidade": "GOIANIA", "ult": "22/10/2026", "bloq": false}, {"cod": "77580", "razao": "58.974.481 JUDITE RIBEIRO DE SOUZA", "fantasia": "RESTAURANTE SAB", "endereco": "AV GONZAGA JAIME QD79 LT02 S 00", "bairro": "VILA REDENCAO", "cidade": "GOIANIA", "ult": "17/06/2025", "bloq": true}, {"cod": "77748", "razao": "60.933.789 JULIANA MACEDO DE SOUS", "fantasia": "EL SHDDAY ALMOO", "endereco": "R 1012 LT35 398", "bairro": "SETOR PEDRO LU", "cidade": "GOIANIA", "ult": "28/04/2026", "bloq": true}, {"cod": "79939", "razao": "M F GRILS LTDA", "fantasia": "RESTAURANTE FLO", "endereco": "AL LEOPOLDO DE BULHOES QD5 338", "bairro": "SET PEDRO LUDO", "cidade": "GOIANIA", "ult": "23/10/2026", "bloq": false}, {"cod": "80018", "razao": "51.888.161 MARCIA FRANCISCA DE OLI", "fantasia": "FRAN CORDEIRO", "endereco": "RUA 1029 QD62 LT11 SN", "bairro": "SETOR PEDRO LU", "cidade": "GOIÁS", "ult": "09/04/2026", "bloq": true}, {"cod": "80105", "razao": "59.637.305 RENATO DAL ALBA", "fantasia": "GAUCHO GRILL", "endereco": "RUA 1025 225", "bairro": "SETOR PEDRO LU", "cidade": "GOIANIA", "ult": "22/10/2026", "bloq": false}, {"cod": "81606", "razao": "EDUARDO ORNELAS VIEIRA 821873041", "fantasia": "CAIPIRAO DO BRUTO", "endereco": "ALAMEDA LEOPOLDO DE BULHÕ 212", "bairro": "SETOR PEDRO LU", "cidade": "GOIÂNIA", "ult": "05/01/2026", "bloq": true}, {"cod": "82004", "razao": "BAR E RESTAURANTE PORTUGA LTDA", "fantasia": "PORTUGA - BAR E R", "endereco": "RUA 1118 QD 213 LT 08 50", "bairro": "SETOR BELA VIST", "cidade": "GOIANIA", "ult": "16/09/2026", "bloq": false}, {"cod": "82005", "razao": "A NASCIMENTO CHAVES LTDA", "fantasia": "ASSADOS 3D", "endereco": "RUA 1117 QD 212 LT 11 101", "bairro": "SET BELA VISTA", "cidade": "GOIANIA", "ult": "22/10/2026", "bloq": false}, {"cod": "82018", "razao": "61.158.948 AKAUA ALVES DE ARAUJO", "fantasia": "PEIXARIA DO MARR", "endereco": "RUA 30-A QD 69 LT 6 s/n", "bairro": "JD SANTO ANTON", "cidade": "APARECIDA DE G", "ult": "19/03/2026", "bloq": true}, {"cod": "82052", "razao": "44.532.890 VALERIA CRISTINA SOUZA P", "fantasia": "ARROZ E BIFE", "endereco": "ALAMEDA COUTO MAGALHAES Q 21", "bairro": "SETOR PEDRO LU", "cidade": "GOIANIA", "ult": "09/09/2026", "bloq": false}, {"cod": "82127", "razao": "RESTAURANTE MULTI SABOR LTDA", "fantasia": "RESTAURANTE MUL", "endereco": "AVENIDA QUARTA RADIAL 1419", "bairro": "BRO JARDIM DAS", "cidade": "GOIANIA", "ult": "20/10/2026", "bloq": false}, {"cod": "82167", "razao": "28.623.606 EDILENE DE OLIVEIRA HONO", "fantasia": "SABOR E AROMA", "endereco": "RUA SC 1 QD 4 LT 13 SL 4 Sn", "bairro": "PARQUE SANTA C", "cidade": "GOIANIA", "ult": "21/07/2026", "bloq": false}, {"cod": "82415", "razao": "BACANAS RESTAURANTE LTDA", "fantasia": "BACANAS RESTAUR", "endereco": "AV BELA VISTA QD 18 LT 1 SL 1 119", "bairro": "BRO JARDIM DAS", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "82593", "razao": "54.733.995 ELINEIDE SANTIAGO", "fantasia": "RESTAURANTE DAS", "endereco": "AV DEPUTADO JAMEL CECILIO 149", "bairro": "SETOR SUL", "cidade": "GOIANIA", "ult": "18/02/2026", "bloq": true}, {"cod": "83175", "razao": "GDP RESTAURANTE LTDA", "fantasia": "RESTAURANTE KER", "endereco": "R H 152 QD 6 LT 1 sn", "bairro": "MANSÕES PARAÍS", "cidade": "APARECIDA DE GO62", "ult": "24/10/2026", "bloq": false}, {"cod": "83658", "razao": "LANCHONETE SABOR A MAIS LTDA", "fantasia": "LANCHONETE SABO", "endereco": "AV ESPERANCA QD AREA LT ARE 1533", "bairro": "AREA CAMPUS SA", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "83730", "razao": "64.773.907 REGINALDO DE SOUZA PAC", "fantasia": "PACHECOS BAR", "endereco": "AVENIDA DO LIBANO QD 28A LT 0 SN", "bairro": "JARDIM SANTO A", "cidade": "GOIANIA", "ult": "05/10/2026", "bloq": false}, {"cod": "83732", "razao": "65.166.252 RICK JHONATHA DOS SANT", "fantasia": "FRAN CORDEIRO", "endereco": "AVENIDA CIRCULAR Sn", "bairro": "SETOR PEDRO LU", "cidade": "GOIANIA", "ult": "05/05/2026", "bloq": true}, {"cod": "83903", "razao": "R2 GESTAO EM ALIMENTOS LTDA", "fantasia": "R2 BAR E RESTAURA", "endereco": "R S2 379", "bairro": "SET BELA VISTA", "cidade": "GOIANIA", "ult": "27/10/2026", "bloq": false}, {"cod": "84121", "razao": "WK BEBIDAS BAR LTDA", "fantasia": "WK BEBIDAS BAR", "endereco": "AV C 171 QD 400 LT 13 1090", "bairro": "BRO JARDIM AME", "cidade": "GOIANIA", "ult": "14/09/2026", "bloq": false}, {"cod": "84854", "razao": "59.293.806 LEONARDO NASCIMENTO S", "fantasia": "BOM DE GARFO", "endereco": "R R 8 QD C2 LT 28 218", "bairro": "VILA REDENCAO", "cidade": "GOIANIA", "ult": "01/10/2026", "bloq": false}, {"cod": "86124", "razao": "ARAUJO GASTRONOMIA LTDA", "fantasia": "VILA BOA PRIME", "endereco": "RUA 55 QDB13 LT 10 312", "bairro": "JD GOIAS", "cidade": "GOIANIA", "ult": "15/09/2026", "bloq": false}, {"cod": "86191", "razao": "52.091.381 LEIDE FERNANDES DOS PAS", "fantasia": "LANCHONETE AGUIA", "endereco": "AV QUARTA RADIAL QD 84 LT 27 872", "bairro": "SETOR PEDRO LU", "cidade": "GOIANIA", "ult": "15/09/2026", "bloq": false}, {"cod": "86199", "razao": "RESTAURANTE DA IVANI LTDA", "fantasia": "RESTAURANTE E BA", "endereco": "AVENIDA PRIMEIRA RADIAL QD62 954", "bairro": "SET PEDRO LUDO", "cidade": "GOIANIA", "ult": "24/09/2026", "bloq": false}, {"cod": "86229", "razao": "GILVANIA NUNES TOCANTINS 93669046", "fantasia": "DOCE MEL SALGADO", "endereco": "RUA COMENDADOR ADIBO AIRES 2101", "bairro": "VILA MARIANA", "cidade": "APARECIDA DE GO62", "ult": "", "bloq": true}, {"cod": "86379", "razao": "53.778.430 MANOEL COUTINHO RODRIG", "fantasia": "EMPORIO ZE RICO", "endereco": "AVENIDA ALEXANDRE DE MORAI 447", "bairro": "PARQUE AMAZON", "cidade": "GOIANIA", "ult": "04/09/2026", "bloq": false}, {"cod": "86450", "razao": "ARAUJO E ALMEIDA PANIFICADORA LT", "fantasia": "DO CHEFE PANIFICA", "endereco": "RUA 85 QD 17 LT 32 282", "bairro": "SETOR SUL", "cidade": "GOIANIA", "ult": "17/09/2026", "bloq": false}, {"cod": "86732", "razao": "68.657.255 CLAUDIO DIAS DE ABREU", "fantasia": "QUITANDAS E CIA", "endereco": "R S 5 QD 212 LT 11 S/N", "bairro": "SETOR BELA VIST", "cidade": "GOIANIA", "ult": "", "bloq": true}, {"cod": "87006", "razao": "KING KONG RESTAURANTE LTDA", "fantasia": "KING KONG RESTAU", "endereco": "AVENIDA C QD 03 LT 16 s/n", "bairro": "JARDIM TIRA DEN", "cidade": "APARECIDA DE GO62", "ult": "", "bloq": false}, {"cod": "87084", "razao": "65.427.117 MARIA HELENA LOPES", "fantasia": "RESTAURANTE HEL", "endereco": "RUA SC 1 QD 05 LT 18 S/N", "bairro": "PARQUE SANTA C", "cidade": "GOIANIA", "ult": "17/10/2026", "bloq": false}, {"cod": "87191", "razao": "64.451.975 MICHEL ANDRE GOULART K", "fantasia": "RESTAURANTE GOU", "endereco": "RUA SC 11 QD 02 LT 10 S/N", "bairro": "PARQUE SANTA C", "cidade": "GOIANIA", "ult": "24/10/2026", "bloq": false}, {"cod": "87232", "razao": "29.635.063 REGINA DUARTE DA SILVA L", "fantasia": "REGINA DUARTE BU", "endereco": "AVENIDA SAO PAULO QD 20 LT 05 S/N", "bairro": "JARDIM DAS ESM", "cidade": "APARECIDA DE GO62", "ult": "", "bloq": false}, {"cod": "87359", "razao": "56.944.396 MARCIA ALVES DA SILVA", "fantasia": "MARCIA SALGADOS", "endereco": "AVENIDA SC1 S/N", "bairro": "PARQUE SANTA C", "cidade": "GOIANIA", "ult": "", "bloq": false}]};
+const DIAS = [["seg","Seg","Segunda"],["ter","Ter","Terça"],["qua","Qua","Quarta"],["qui","Qui","Quinta"],["sex","Sex","Sexta"]];
+const COR = d => `var(--${d})`;
+const CHAVE = "roteiro_" + DADOS.rca;
+let escolha = {};
+try { escolha = JSON.parse(localStorage.getItem(CHAVE) || "{}") || {}; } catch (e) { escolha = {}; }
+// cada cliente guarda uma lista de dias (versão antiga guardava um dia só)
+for (const k in escolha) { if (!Array.isArray(escolha[k])) escolha[k] = [escolha[k]]; if (!escolha[k].length) delete escolha[k]; }
+const tem = (c, d) => (escolha[c] || []).includes(d);
+let filtro = "todos", termo = "";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const titulo = c => c.fantasia || c.bairro;
+function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(escolha)); } catch (e) {} }
+function resumo() {
+  const n = {}; DIAS.forEach(([d]) => n[d] = 0);
+  Object.values(escolha).forEach(ds => ds.forEach(d => { if (n[d] !== undefined) n[d]++; }));
+  const sem = DADOS.clientes.length - Object.keys(escolha).length;
+  $("resumo").innerHTML = DIAS.map(([d, a]) => `<div class="dr"><b>${n[d]}</b><span>${a}</span></div>`).join("") + `<div class="dr"><b>${sem}</b><span>Sem dia</span></div>`;
+  const visitas = DIAS.reduce((s, [d]) => s + n[d], 0);
+  const feitos = Object.keys(escolha).length;
+  $("feitos").textContent = feitos;
+  $("falta").textContent = (sem ? `faltam ${sem}` : "todos com dia ✓") + ` · ${visitas} visitas/semana`;
+  $("trilho").style.width = (feitos / DADOS.clientes.length * 100) + "%";
+  $("zap").href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto());
+}
+function texto() {
+  let t = `*Roteiro de visitas · RCA ${DADOS.rca} ${DADOS.nome}*\n`;
+  DIAS.forEach(([d, , nome]) => {
+    const l = DADOS.clientes.filter(c => tem(c.cod, d));
+    if (!l.length) return;
+    t += `\n*${nome.toUpperCase()}* (${l.length})\n` + l.map(c => `• ${c.cod} ${titulo(c)} – ${c.bairro}`).join("\n") + "\n";
+  });
+  const sem = DADOS.clientes.filter(c => !escolha[c.cod]);
+  if (sem.length) t += `\n*SEM DIA* (${sem.length})\n` + sem.map(c => `• ${c.cod} ${titulo(c)}`).join("\n") + "\n";
+  return t;
+}
+function filtros() {
+  const ops = [["todos","Todos"],["sem","Sem dia"]].concat(DIAS.map(([d, a]) => [d, a]));
+  $("filtros").innerHTML = ops.map(([k, r]) => `<button type="button" data-f="${k}" aria-pressed="${filtro === k}">${r}</button>`).join("");
+}
+function lista() {
+  const q = termo.trim().toUpperCase();
+  const vis = DADOS.clientes.filter(c => {
+    if (filtro === "sem" && escolha[c.cod]) return false;
+    if (filtro !== "todos" && filtro !== "sem" && !tem(c.cod, filtro)) return false;
+    if (q && !(c.cod + " " + c.fantasia + " " + c.razao + " " + c.bairro).toUpperCase().includes(q)) return false;
+    return true;
+  });
+  if (!vis.length) { $("lista").innerHTML = `<p class="vazio">Nenhum cliente neste filtro.</p>`; return; }
+  const grupos = {};
+  vis.forEach(c => (grupos[c.bairro + " · " + c.cidade] ||= []).push(c));
+  $("lista").innerHTML = Object.entries(grupos).map(([b, cs]) => `<section class="bairro"><h2>${esc(b)} <small>${cs.length} cliente${cs.length > 1 ? "s" : ""}</small></h2>` +
+    cs.map(c => { const ds = escolha[c.cod] || []; const d = ds[0];
+      return `<article class="pdv${d ? " marcado" : ""}" style="${d ? "--cor:" + COR(d) : ""}">
+        <div class="l1"><span class="cod">${c.cod}</span><span class="fant">${esc(titulo(c))}</span>${c.bloq ? '<span class="tag">BLOQUEADO</span>' : ""}${ds.length > 1 ? `<span class="vezes">${ds.length}x na semana</span>` : ""}</div>
+        <div class="razao">${esc(c.razao)}</div>
+        <div class="end">${esc(c.endereco)} · ${esc(c.bairro)}${c.ult ? " · últ. compra " + c.ult : ""}</div>
+        <div class="botoes">${DIAS.map(([k, a]) => `<button type="button" data-c="${c.cod}" data-d="${k}" style="--cor:${COR(k)}" aria-pressed="${ds.includes(k)}">${a}</button>`).join("")}</div>
+      </article>`; }).join("") + `</section>`).join("");
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.c) {
+    const c = b.dataset.c, d = b.dataset.d;
+    const ds = escolha[c] || [];
+    escolha[c] = ds.includes(d) ? ds.filter(x => x !== d) : DIAS.map(([k]) => k).filter(k => k === d || ds.includes(k));
+    if (!escolha[c].length) delete escolha[c];
+    salvar(); resumo(); lista();
+  } else if (b.dataset.f) { filtro = b.dataset.f; filtros(); lista(); }
+  else if (b.id === "copiar") {
+    const t = texto();
+    const ok = () => { b.textContent = "Copiado!"; setTimeout(() => b.textContent = "Copiar", 1600); };
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(ok).catch(() => {
+      const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); ok(); } catch (er) {} ta.remove(); });
+  }
+});
+$("busca").addEventListener("input", e => { termo = e.target.value; lista(); });
+filtros(); resumo(); lista();
+</script>
+</body>
+</html>
