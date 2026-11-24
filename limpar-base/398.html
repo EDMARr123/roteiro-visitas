@@ -57,6 +57,8 @@ h1 { font-family: var(--display); font-weight: 800; font-size: 32px; line-height
 .info .alerta { color: var(--retirar); font-weight: 700; }
 .info .atencao { color: var(--amber); font-weight: 700; }
 .botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.trava { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--chip); border: 1.5px dashed var(--line); font-size: 13.5px; color: var(--muted); text-align: center; }
+.trava b { color: var(--retirar); }
 .botoes button { border: 2px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 10px; padding: 11px 0; font: 800 16px var(--display); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .botoes .b-base[aria-pressed="true"] { background: var(--base); border-color: var(--base); color: var(--on-cor); }
 .botoes .b-retirar[aria-pressed="true"] { background: var(--retirar); border-color: var(--retirar); color: var(--on-cor); }
@@ -106,7 +108,7 @@ button:focus-visible, #busca:focus-visible, #ordem:focus-visible { outline: 3px 
 </div></div>
 
 <main class="wrap">
-  <p class="dica">Toque em <b>BASE</b> para o cliente continuar na carteira ou em <b>RETIRAR</b> para tirar da base. Toque de novo para desfazer. As escolhas ficam salvas neste aparelho; no fim, o botão verde manda pelo WhatsApp só os clientes para retirar.</p>
+  <p class="dica">Toque em <b>BASE</b> para o cliente continuar na carteira ou em <b>RETIRAR</b> para tirar da base. Toque de novo para desfazer. Cliente inadimplente fica na base e não dá para alterar. As escolhas ficam salvas neste aparelho; no fim, o botão verde manda pelo WhatsApp só os clientes para retirar.</p>
   <div id="lista"></div>
 </main>
 
@@ -127,6 +129,10 @@ const BLOQ = { BAI: 'inadimplência', BAC: 'inatividade', BM: 'manual', LZI: 'li
 let escolhas = {};
 try { escolhas = JSON.parse(localStorage.getItem(CHAVE) || '{}') || {}; } catch (e) { escolhas = {}; }
 let filtro = 'todos';
+// Inadimplente (bloqueio BAI) não pode ser alterado: fica na base e nunca vai para a lista de retirar (pedido do Edmar, 24/11/2026)
+function travado(c) { return c.tipo_bloq === 'BAI'; }
+DADOS.clientes.forEach(c => { if (travado(c)) delete escolhas[c.cod]; });
+function escolha(c) { return travado(c) ? 'base' : escolhas[c.cod]; }
 
 function dataBr(s) { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s || ''); return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null; }
 const REF = dataBr(DADOS.gerado.slice(0, 10));
@@ -136,7 +142,7 @@ function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(escolhas));
 function nome(c) { return c.fantasia || c.razao; }
 
 function visivel(c) {
-  const e = escolhas[c.cod];
+  const e = escolha(c);
   if (filtro === 'falta' && e) return false;
   if (filtro === 'base' && e !== 'base') return false;
   if (filtro === 'retirar' && e !== 'retirar') return false;
@@ -148,7 +154,7 @@ function visivel(c) {
 }
 
 function cartao(c) {
-  const e = escolhas[c.cod] || '';
+  const e = escolha(c) || '';
   const d = dias(c);
   const ult = c.ult ? `Últ. compra <span class="${d >= 180 ? 'alerta' : d >= 90 ? 'atencao' : ''}">${esc(c.ult)} · há ${d} dias</span>`
                     : '<span class="alerta">Sem compra registrada</span>';
@@ -158,10 +164,12 @@ function cartao(c) {
     <div class="razao">${esc(c.razao)}</div>
     <div class="end">${esc(c.endereco)}${c.nr ? ', ' + esc(c.nr) : ''} · ${esc(c.bairro)} · ${esc(c.cidade)}</div>
     <div class="info"><span>${ult}</span><span>Cadastro ${esc(c.cadastro || '-')}</span><span>Limite R$ ${esc(c.limite || '-')}</span><span>Cobrança ${esc(c.cobranca || '-')}</span></div>
-    <div class="botoes">
+    ${travado(c)
+      ? '<div class="trava"><b>Inadimplente:</b> fica na base, não dá para alterar.</div>'
+      : `<div class="botoes">
       <button class="b-base" data-v="base" aria-pressed="${e === 'base'}">Base</button>
       <button class="b-retirar" data-v="retirar" aria-pressed="${e === 'retirar'}">Retirar</button>
-    </div></div>`;
+    </div>`}</div>`;
 }
 
 function desenhar() {
@@ -181,15 +189,17 @@ function desenhar() {
 }
 
 function contar() {
-  const v = Object.values(escolhas);
+  const v = DADOS.clientes.map(escolha);
   const nb = v.filter(x => x === 'base').length, nr = v.filter(x => x === 'retirar').length;
+  const nt = DADOS.clientes.filter(travado).length;
   const nf = DADOS.clientes.length - nb - nr;
   document.getElementById('n-base').textContent = nb;
   document.getElementById('n-retirar').textContent = nr;
   document.getElementById('n-falta').textContent = nf;
+  const trav = nt ? ` (${nt} inadimplente${nt === 1 ? '' : 's'} já fica${nt === 1 ? '' : 'm'} na base)` : '';
   document.getElementById('resumo').innerHTML = nf
-    ? `Faltam <b>${nf}</b> de ${DADOS.clientes.length} clientes para decidir.`
-    : `<b>Pronto:</b> todos os ${DADOS.clientes.length} clientes decididos. Envie pelo WhatsApp.`;
+    ? `Faltam <b>${nf}</b> clientes para decidir${trav}.`
+    : `<b>Pronto:</b> todos decididos${trav}. Envie os retirados.`;
 }
 
 // O WhatsApp leva SÓ os clientes para retirar (pedido do Edmar em 24/11/2026)
