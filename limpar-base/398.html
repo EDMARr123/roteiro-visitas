@@ -106,14 +106,14 @@ button:focus-visible, #busca:focus-visible, #ordem:focus-visible { outline: 3px 
 </div></div>
 
 <main class="wrap">
-  <p class="dica">Toque em <b>BASE</b> para o cliente continuar na carteira ou em <b>RETIRAR</b> para tirar da base. Toque de novo para desfazer. As escolhas ficam salvas neste aparelho; no fim, envie pelo WhatsApp.</p>
+  <p class="dica">Toque em <b>BASE</b> para o cliente continuar na carteira ou em <b>RETIRAR</b> para tirar da base. Toque de novo para desfazer. As escolhas ficam salvas neste aparelho; no fim, o botão verde manda pelo WhatsApp só os clientes para retirar.</p>
   <div id="lista"></div>
 </main>
 
 <div class="rodape"><div class="wrap">
   <div class="resumo" id="resumo"></div>
   <div class="acoes">
-    <button id="enviar">Enviar no WhatsApp</button>
+    <button id="enviar">Enviar retirados</button>
     <button id="copiar">Copiar</button>
     <button id="zerar">Zerar</button>
   </div>
@@ -192,17 +192,18 @@ function contar() {
     : `<b>Pronto:</b> todos os ${DADOS.clientes.length} clientes decididos. Envie pelo WhatsApp.`;
 }
 
+// O WhatsApp leva SÓ os clientes para retirar (pedido do Edmar em 24/11/2026)
 function texto() {
   const r = DADOS.clientes.filter(c => escolhas[c.cod] === 'retirar');
-  const b = DADOS.clientes.filter(c => escolhas[c.cod] === 'base');
-  const f = DADOS.clientes.filter(c => !escolhas[c.cod]);
-  const linhas = [`*LIMPAR BASE · RCA ${DADOS.rca} ${DADOS.nome.toUpperCase()}*`, `${DADOS.sup} · relatório 313 de ${DADOS.gerado.slice(0, 10)}`, ''];
-  linhas.push(`*RETIRAR DA BASE (${r.length})*`);
+  const linhas = [`*RETIRAR DA BASE · RCA ${DADOS.rca} ${DADOS.nome.toUpperCase()}*`,
+                  `${DADOS.sup} · relatório 313 de ${DADOS.gerado.slice(0, 10)}`, '', `*${r.length} cliente${r.length === 1 ? '' : 's'}:*`];
   r.forEach(c => linhas.push(`${c.cod} - ${nome(c)}${c.ult ? ' (últ. compra ' + c.ult + ')' : ' (sem compra)'}`));
-  linhas.push('', `*FICA NA BASE (${b.length})*`);
-  if (b.length) linhas.push(b.map(c => c.cod).join(', '));
-  if (f.length) linhas.push('', `Falta decidir (${f.length}): ${f.map(c => c.cod).join(', ')}`);
   return linhas.join('\n');
+}
+function temRetirar() {
+  if (DADOS.clientes.some(c => escolhas[c.cod] === 'retirar')) return true;
+  aviso('Nenhum cliente marcado para RETIRAR');
+  return false;
 }
 
 function aviso(t) { const a = document.getElementById('aviso'); a.textContent = t; a.classList.add('on'); setTimeout(() => a.classList.remove('on'), 1800); }
@@ -225,9 +226,11 @@ document.querySelectorAll('.filtros button').forEach(b => b.addEventListener('cl
 document.getElementById('busca').addEventListener('input', desenhar);
 document.getElementById('ordem').addEventListener('change', desenhar);
 document.getElementById('enviar').addEventListener('click', () => {
+  if (!temRetirar()) return;
   window.open('https://wa.me/?text=' + encodeURIComponent(texto()), '_blank');
 });
 document.getElementById('copiar').addEventListener('click', async () => {
+  if (!temRetirar()) return;
   try { await navigator.clipboard.writeText(texto()); aviso('Copiado'); }
   catch (e) { const t = document.createElement('textarea'); t.value = texto(); document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); aviso('Copiado'); }
 });
