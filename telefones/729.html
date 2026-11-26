@@ -50,6 +50,10 @@ h1 { font-family: var(--display); font-weight: 800; font-size: 32px; line-height
 .cod { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); font-size: 13px; }
 .fant { font-weight: 700; font-size: 16px; }
 .razao { font-size: 12.5px; color: var(--muted); }
+.cab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: start; }
+.cab .campo input { font: 600 16px var(--body); letter-spacing: 0; padding: 9px 12px; }
+.contato.preenchido input { border-color: var(--ok); }
+@media (max-width: 560px) { .cab { grid-template-columns: minmax(0, 1fr); } }
 .campos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-top: 8px; }
 .campo { min-width: 0; }
 .campo label { display: flex; justify-content: space-between; gap: 6px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; white-space: nowrap; }
@@ -108,7 +112,7 @@ input:focus-visible, button:focus-visible, #busca:focus-visible, #ordem:focus-vi
 </div></div>
 
 <main class="wrap">
-  <p class="dica">Digite o telefone de cada cliente <b>com DDD</b>, por exemplo (62) 99999-9999. Se o cliente tiver outro número, use o <b>Telefone 2</b>. Fica salvo neste aparelho enquanto você preenche. No fim, toque no botão verde para mandar a lista pelo WhatsApp.</p>
+  <p class="dica">Digite o telefone de cada cliente <b>com DDD</b>, por exemplo (62) 99999-9999. Se o cliente tiver outro número, use o <b>Telefone 2</b>. Em <b>Contato</b>, escreva o nome do comprador. Fica salvo neste aparelho enquanto você preenche. No fim, toque no botão verde para mandar a lista pelo WhatsApp.</p>
   <div id="lista"></div>
 </main>
 
@@ -129,12 +133,17 @@ let tels = {};
 try { tels = JSON.parse(localStorage.getItem(CHAVE) || '{}') || {}; } catch (e) { tels = {}; }
 let tels2 = {};  // 2º telefone (pedido do Edmar em 26/11/2026)
 try { tels2 = JSON.parse(localStorage.getItem(CHAVE + '-2') || '{}') || {}; } catch (e) { tels2 = {}; }
+let contatos = {};  // nome do comprador (pedido do Edmar em 26/11/2026: "coloque contato")
+try { contatos = JSON.parse(localStorage.getItem(CHAVE + '-contato') || '{}') || {}; } catch (e) { contatos = {}; }
 let filtro = 'todos';
 DADOS.clientes.forEach((c, i) => { c.i = i; });
 
 function esc(s) { return String(s || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
 function salvar() {
-  try { localStorage.setItem(CHAVE, JSON.stringify(tels)); localStorage.setItem(CHAVE + '-2', JSON.stringify(tels2)); }
+  try {
+    localStorage.setItem(CHAVE, JSON.stringify(tels)); localStorage.setItem(CHAVE + '-2', JSON.stringify(tels2));
+    localStorage.setItem(CHAVE + '-contato', JSON.stringify(contatos));
+  }
   catch (e) { /* aparelho sem armazenamento */ }
 }
 function mapa(n) { return n === '2' ? tels2 : tels; }
@@ -182,7 +191,7 @@ function visivel(c) {
   if (filtro === 'erro' && sitCliente(c) !== 'erro') return false;
   const q = document.getElementById('busca').value.trim().toLowerCase();
   if (!q) return true;
-  return [c.cod, c.fantasia, c.razao, tels[c.cod] || '', tels2[c.cod] || ''].join(' ').toLowerCase().includes(q);
+  return [c.cod, c.fantasia, c.razao, contatos[c.cod] || '', tels[c.cod] || '', tels2[c.cod] || ''].join(' ').toLowerCase().includes(q);
 }
 
 function campo(c, n) {
@@ -195,10 +204,19 @@ function campo(c, n) {
              value="${esc(formatar(d))}" aria-label="Telefone ${n} de ${esc(nome(c))}">
     </div>`;
 }
+function contato(c) {
+  const v = contatos[c.cod] || '', id = `ct-${c.cod}`;
+  return `<div class="campo contato ${v ? 'preenchido' : ''}">
+      <label for="${id}"><span>Contato <small>· nome do comprador</small></span></label>
+      <input id="${id}" class="nome-contato" type="text" autocomplete="off" autocapitalize="words" enterkeyhint="next"
+             maxlength="60" placeholder="Nome do comprador" value="${esc(v)}" aria-label="Contato (comprador) de ${esc(nome(c))}">
+    </div>`;
+}
 function cartao(c) {
   return `<div class="cli ${sitCliente(c)}" data-cod="${esc(c.cod)}">
-    <div class="l1"><span class="cod">${esc(c.cod)}</span><span class="fant">${esc(nome(c))}</span></div>
-    <div class="razao">${esc(c.razao)}</div>
+    <div class="cab"><div>
+      <div class="l1"><span class="cod">${esc(c.cod)}</span><span class="fant">${esc(nome(c))}</span></div>
+      <div class="razao">${esc(c.razao)}</div></div>${contato(c)}</div>
     <div class="campos">${campo(c, '1')}${campo(c, '2')}</div></div>`;
 }
 
@@ -227,23 +245,25 @@ function contar() {
     : `<b>Pronto:</b> todos os ${nok} clientes com telefone. Envie a lista.`;
 }
 
-// O WhatsApp leva só os telefones completos: cód · razão · fantasia · telefone 1 · telefone 2
+// O WhatsApp leva os clientes com telefone completo ou contato: cód · razão · fantasia · contato · telefone 1 · telefone 2
 function telOk(m, c) { return situacao(m[c.cod]) === 'ok' ? formatar(m[c.cod]) : ''; }
+function temContato(c) { return !!(contatos[c.cod] || '').trim(); }
 function texto() {
-  const r = DADOS.clientes.filter(temTel);
+  const r = DADOS.clientes.filter(c => temTel(c) || temContato(c));
   const linhas = [`*TELEFONES DOS CLIENTES · RCA ${DADOS.rca} ${DADOS.nome.toUpperCase()}*`,
-                  `${DADOS.sup} · ${r.length} de ${DADOS.clientes.length} clientes`, '',
-                  'Cód | Razão | Fantasia | Telefone 1 | Telefone 2'];
+                  `${DADOS.sup} · ${DADOS.clientes.filter(temTel).length} de ${DADOS.clientes.length} clientes com telefone`, '',
+                  'Cód | Razão | Fantasia | Contato | Telefone 1 | Telefone 2'];
   r.forEach(c => {
     const t = [telOk(tels, c), telOk(tels2, c)].filter(Boolean);
-    linhas.push(`${c.cod} | ${c.razao} | ${c.fantasia} | ${t[0]} | ${t[1] || '-'}`);
+    const ct = (contatos[c.cod] || '').replace(/\s+/g, ' ').trim();
+    linhas.push(`${c.cod} | ${c.razao} | ${c.fantasia} | ${ct || '-'} | ${t[0] || '-'} | ${t[1] || '-'}`);
   });
   return linhas.join('\n');
 }
 function podeEnviar() {
-  const nok = DADOS.clientes.filter(temTel).length;
+  const nok = DADOS.clientes.filter(c => temTel(c) || temContato(c)).length;
   const nerro = [tels, tels2].reduce((n, m) => n + DADOS.clientes.filter(c => situacao(m[c.cod]) === 'erro').length, 0);
-  if (!nok) { aviso('Nenhum telefone completo ainda'); return false; }
+  if (!nok) { aviso('Nenhum telefone completo nem contato ainda'); return false; }
   if (nerro && !confirm(`${nerro} telefone${nerro === 1 ? ' está incompleto e não vai' : 's estão incompletos e não vão'} na lista. Enviar assim mesmo?`)) return false;
   return true;
 }
@@ -264,6 +284,14 @@ function pintar(card, cmp, d, digitando) {
   else if (sc === 'erro' && temTel(c)) card.classList.add('ok');
 }
 lista.addEventListener('input', ev => {
+  const ct = ev.target.closest('input.nome-contato');
+  if (ct) {
+    const cod = ct.closest('.cli').dataset.cod, v = ct.value.replace(/^\s+/, '');
+    if (v) contatos[cod] = v; else delete contatos[cod];
+    salvar();
+    ct.closest('.campo').classList.toggle('preenchido', !!v.trim());
+    return;
+  }
   const inp = ev.target.closest('input[type="tel"]'); if (!inp) return;
   const card = inp.closest('.cli'), cmp = inp.closest('.campo');
   const cod = card.dataset.cod, m = mapa(inp.dataset.n);
@@ -282,6 +310,13 @@ lista.addEventListener('focusout', ev => {
 // Enter vai para o Telefone 1 do próximo cliente (o 2º é opcional: toque nele quando o cliente tiver)
 lista.addEventListener('keydown', ev => {
   if (ev.key !== 'Enter') return;
+  const ct = ev.target.closest('input.nome-contato');
+  if (ct) {  // do Contato vai para o Telefone 1 do mesmo cliente
+    ev.preventDefault();
+    const t1 = ct.closest('.cli').querySelector('input[data-n="1"]');
+    if (t1) t1.focus();
+    return;
+  }
   const inp = ev.target.closest('input[type="tel"]'); if (!inp) return;
   ev.preventDefault();
   const cards = [...lista.querySelectorAll('.cli')];
@@ -306,8 +341,8 @@ document.getElementById('copiar').addEventListener('click', async () => {
   catch (e) { const t = document.createElement('textarea'); t.value = texto(); document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); aviso('Copiado'); }
 });
 document.getElementById('zerar').addEventListener('click', () => {
-  if (!confirm('Apagar todos os telefones digitados neste aparelho?')) return;
-  tels = {}; tels2 = {}; salvar(); desenhar();
+  if (!confirm('Apagar todos os telefones e contatos digitados neste aparelho?')) return;
+  tels = {}; tels2 = {}; contatos = {}; salvar(); desenhar();
 });
 desenhar();
 </script>
