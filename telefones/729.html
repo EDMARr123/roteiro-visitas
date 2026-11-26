@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Telefones 729 · Marcelo Alves</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Telefones dos clientes: cada cliente do relatório 313 (cód, razão, fantasia) com um campo para o vendedor digitar o
+   telefone. O que ele digita fica salvo no aparelho; no fim, o botão verde manda a lista pelo WhatsApp. */
+:root {
+  --bg: #f4f1ee; --surface: #ffffff; --ink: #221a16; --muted: #75665f; --line: #e5dbd4; --chip: #efe7e2;
+  --red: #c8102e; --gold: #f2b705; --ok: #0f6b34; --erro: #b3261e; --on-cor: #ffffff;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16110f; --surface: #211916; --ink: #f3eae5; --muted: #b3a39b; --line: #3a2d28; --chip: #2e231f;
+  --red: #e2405a; --ok: #4fc286; --erro: #ff6b5e; --on-cor: #16110f; color-scheme: dark; } }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.35; padding-bottom: 140px; }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.topo { background: #c8102e; color: #fff; }
+header.topo .wrap { padding-block: calc(16px + env(safe-area-inset-top, 0px)) 16px; }
+.eyebrow { font-family: var(--display); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: 13px; opacity: .9; }
+h1 { font-family: var(--display); font-weight: 800; font-size: 32px; line-height: 1; margin: 4px 0 6px; text-transform: uppercase; }
+.sub { font-size: 14px; opacity: .92; margin: 0; }
+.placar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.pl { background: rgba(255,255,255,.15); border-radius: 10px; padding: 8px 6px; text-align: center; }
+.pl b { display: block; font-family: var(--display); font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+.pl span { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.barra { height: 6px; border-radius: 999px; background: rgba(255,255,255,.25); margin-top: 12px; overflow: hidden; }
+.barra i { display: block; height: 100%; width: 0; background: #fff; transition: width .25s; }
+.ferramentas { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.ferramentas .wrap { padding-block: 10px; display: grid; gap: 8px; }
+.linha-busca { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 8px; }
+#busca, #ordem { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; min-width: 0; }
+#ordem { font-size: 14px; }
+.filtros { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.filtros button { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px; font: 600 13px var(--body); cursor: pointer; }
+.filtros button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.dica { font-size: 13px; color: var(--muted); margin: 12px 0 8px; }
+.cli { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+.cli.ok { border-color: var(--ok); box-shadow: inset 4px 0 0 var(--ok); }
+.cli.erro { border-color: var(--erro); box-shadow: inset 4px 0 0 var(--erro); }
+.l1 { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.cod { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); font-size: 13px; }
+.fant { font-weight: 700; font-size: 16px; }
+.razao { font-size: 12.5px; color: var(--muted); }
+.campo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; margin-top: 8px; }
+.campo input { width: 100%; min-width: 0; padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: 600 18px var(--body); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.campo input::placeholder { color: var(--muted); font-weight: 400; opacity: .7; }
+.cli.ok .campo input { border-color: var(--ok); }
+.cli.erro .campo input { border-color: var(--erro); }
+.selo { font-size: 12px; font-weight: 700; min-width: 74px; text-align: right; }
+.cli.ok .selo { color: var(--ok); }
+.cli.erro .selo { color: var(--erro); }
+input:focus-visible, button:focus-visible, #busca:focus-visible, #ordem:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.vazio { text-align: center; color: var(--muted); padding: 30px 0; }
+.rodape { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); z-index: 6; }
+.rodape .wrap { padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; }
+.resumo { font-size: 13px; color: var(--muted); }
+.resumo b { color: var(--ink); }
+.acoes { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
+.acoes button { border: 0; border-radius: 10px; padding: 12px 6px; font: 700 14px var(--body); cursor: pointer; }
+#enviar { background: #128c4a; color: #fff; }
+#copiar { background: var(--chip); color: var(--ink); }
+#zerar { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.aviso { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; text-align: center; }
+.aviso.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="topo"><div class="wrap">
+  <div class="eyebrow">Telefones dos clientes · Sup. Lucas Henrique</div>
+  <h1>729 · Marcelo Alves</h1>
+  <p class="sub">GYN RT 101 - JD AMERICA · relatório 313 de 26/11/2026 · 89 clientes</p>
+  <div class="placar">
+    <div class="pl"><b id="n-ok">0</b><span>Com telefone</span></div>
+    <div class="pl"><b id="n-falta">0</b><span>Falta</span></div>
+    <div class="pl"><b id="n-erro">0</b><span>Incompletos</span></div>
+  </div>
+  <div class="barra" aria-hidden="true"><i id="barra"></i></div>
+</div></header>
+
+<div class="ferramentas"><div class="wrap">
+  <div class="linha-busca">
+    <input id="busca" type="search" placeholder="Buscar cliente ou código" aria-label="Buscar cliente">
+    <select id="ordem" aria-label="Ordem da lista">
+      <option value="relatorio">Ordem do relatório</option>
+      <option value="nome">Nome de A a Z</option>
+      <option value="cod">Por código</option>
+    </select>
+  </div>
+  <div class="filtros" role="group" aria-label="Filtrar">
+    <button data-f="todos" aria-pressed="true">Todos</button>
+    <button data-f="falta" aria-pressed="false">Falta telefone</button>
+    <button data-f="ok" aria-pressed="false">Com telefone</button>
+    <button data-f="erro" aria-pressed="false">Incompletos</button>
+  </div>
+</div></div>
+
+<main class="wrap">
+  <p class="dica">Digite o telefone de cada cliente <b>com DDD</b>, por exemplo (62) 99999-9999. Fica salvo neste aparelho enquanto você preenche. No fim, toque no botão verde para mandar a lista pelo WhatsApp.</p>
+  <div id="lista"></div>
+</main>
+
+<div class="rodape"><div class="wrap">
+  <div class="resumo" id="resumo"></div>
+  <div class="acoes">
+    <button id="enviar">Enviar telefones</button>
+    <button id="copiar">Copiar</button>
+    <button id="zerar">Zerar</button>
+  </div>
+</div></div>
+<div class="aviso" id="aviso" role="status" aria-live="polite"></div>
+
+<script>
+const DADOS = {"rca": "729", "nome": "Marcelo Alves", "sup": "Sup. Lucas Henrique", "gerado": "26/11/2026 11:59", "clientes": [{"cod": "68830", "razao": "TOP DISTRIBUIÇÃO DE ALIMENTOS LTD", "fantasia": "TOP DISTRIBUIÇÃO"}, {"cod": "79031", "razao": "BPK INDÚSTRIA DE PRODUTOS ALIMEN", "fantasia": "BOI POR KILO"}, {"cod": "44238", "razao": "EMPORIO MEGA FRIOS LTDA", "fantasia": "EMPORIO MEGA FR"}, {"cod": "69557", "razao": "FCM RESTAURANTE LTDA", "fantasia": "MURANO RESTAURA"}, {"cod": "85447", "razao": "SUPERMERCADO DEUS É FIEL AP GOIA", "fantasia": "SUPERMERCADO D"}, {"cod": "39300", "razao": "COMERCIAL RAMOS E SILVA AP-GO LT", "fantasia": "YPE SUP."}, {"cod": "47565", "razao": "GEPS RESTAURANTE LTDA", "fantasia": "MURANO RESTAURA"}, {"cod": "85966", "razao": "MERCEARIA PIRY LTDA", "fantasia": "MERCEARIA PIRY"}, {"cod": "87505", "razao": "K. R. DA SILVA LTDA", "fantasia": "EMPORIO OURO NE"}, {"cod": "76290", "razao": "COMERCIAL MAGALHÃES ALVES LTDA", "fantasia": "EMPORIO JARDAM"}, {"cod": "81317", "razao": "GT PRODUTOS ALIMENTICIOS LTDA", "fantasia": "PAKERE PIZZA & BU"}, {"cod": "74071", "razao": "FAC SOLUCOES EMPRESARIAIS E ALIM", "fantasia": "PLAYERS"}, {"cod": "54657", "razao": "TR ALIMENTOS LTDA", "fantasia": "FRIGORIFICO BOI DO"}, {"cod": "69705", "razao": "LANCHES PRODUCOES LTDA", "fantasia": "LANCHES PRODUCO"}, {"cod": "73420", "razao": "40.308.078 LUCILENE DIVINA GOMES", "fantasia": "RESTAURANTE DA T"}, {"cod": "3717", "razao": "EMPORIO DOLCCI COMERCIAL DE ALIM", "fantasia": "EMPORIO DOLCCI"}, {"cod": "73067", "razao": "MERCEARIA CANADÁ LTDA", "fantasia": "MERCEARIA CANAD"}, {"cod": "75490", "razao": "COMERCIO DE CARNES CAMPINAS LTD", "fantasia": "CASA DE CARNES C"}, {"cod": "20910", "razao": "SUPERMERCADOS PERTO LTDA ME", "fantasia": "SUPER PERTO"}, {"cod": "86097", "razao": "JDA MEGA FRIOS LTDA", "fantasia": "JDA MEGA FRIOS"}, {"cod": "65806", "razao": "MF FRIOS LTDA", "fantasia": "MEGA FRIOS"}, {"cod": "58694", "razao": "JB INDUSTRIA E COMERCIO DE CARNE", "fantasia": "JB ALIMENTOS"}, {"cod": "18925", "razao": "COMERCIAL RAMOS E SILVA EIRELI", "fantasia": "YPE SUP."}, {"cod": "47290", "razao": "GUILHERME BARBOSA LOPES 7000317", "fantasia": "DELICIAS GOIANAS"}, {"cod": "14924", "razao": "BARATAO EIRELI - ME", "fantasia": "SUP. BARATAO"}, {"cod": "575", "razao": "POTENCIA DA CARNE LTDA ME", "fantasia": "POTENCIA DA CARN"}, {"cod": "1179", "razao": "J L C BAIOCCHI ALIMENTOS LTDA", "fantasia": "VOVO NICE SALGAD"}, {"cod": "64058", "razao": "BPK INDÚSTRIA DE PRODUTOS ALIMEN", "fantasia": "BOI POR KILO"}, {"cod": "14225", "razao": "SUPERMERCADO L & L LTDA - EPP", "fantasia": "SUP. DO LAR"}, {"cod": "16386", "razao": "RIVIA DAYANE D ABADIA DA SILVA 7404", "fantasia": "KI-DELICIA COMIDA"}, {"cod": "80271", "razao": "M DAS GRACAS MOURA BARROS", "fantasia": "RESTAURANTE DEL"}, {"cod": "79932", "razao": "A R COMERCIO DE SECOS E MOLHADO", "fantasia": "SUPER ECONOMAR"}, {"cod": "577", "razao": "CINTRA & ALMEIDA LTDA", "fantasia": "SUP. TOLEDO"}, {"cod": "79809", "razao": "MAIS SABOR BAR & RESTAURANTE LT", "fantasia": "MAIS SABOR RESTA"}, {"cod": "77834", "razao": "60.135.736 MARCELO FELIPE SIQUEIRA", "fantasia": "EMPORIO AMAZONIA"}, {"cod": "82132", "razao": "LUCAS ALVES DE GODOI 04045821171", "fantasia": "TIA ROSA SALGADIN"}, {"cod": "74822", "razao": "52.974.897 SERGIO ANTONIO MALAQUI", "fantasia": "SERGIO MALAQUIAS"}, {"cod": "75713", "razao": "RESTAURANTE CAPITAL LTDA", "fantasia": "RESTAURANTE CAP"}, {"cod": "80484", "razao": "PREMIUM CARNES NOBRES LTDA", "fantasia": "PREMIUM CARNES N"}, {"cod": "26537", "razao": "LEVE MAIS MINIMERCADO - EIRELI", "fantasia": "LEVE MAIS SUPERM"}, {"cod": "87637", "razao": "65.115.466 GABRIELLY DINIZ DE PAULA", "fantasia": "COXIE SALGADOS"}, {"cod": "82449", "razao": "64.705.945 VANESSA FREITAS CORREA", "fantasia": "SALGATTO"}, {"cod": "79720", "razao": "CASA GRANDE RESTAURANTE & BUFF", "fantasia": "CASA GRANDE REST"}, {"cod": "73295", "razao": "FRIGORIFICO E TRANSPORTADORA ID", "fantasia": "FRIGORIFICO IDEAL"}, {"cod": "84019", "razao": "IMN MERCADO AUTONOMO LTDA", "fantasia": "IMN MERCADO AUTO"}, {"cod": "75512", "razao": "ALI SUPERMERCADO LTDA", "fantasia": "SUPER ALI SUP."}, {"cod": "78790", "razao": "SALGATTO DOCES E SALGADOS LTDA", "fantasia": "SALGATTO"}, {"cod": "70624", "razao": "MM COMERCIO DE CARNES LTDA", "fantasia": "MM CARNES"}, {"cod": "84478", "razao": "CAPITAL BEBIDAS ATACADISTA E VARE", "fantasia": "EMPORIO CAPITAL"}, {"cod": "87279", "razao": "CASA DE CARNE DO MARQUINHO LTDA", "fantasia": "CASA DE CARNE DO"}, {"cod": "85656", "razao": "SUPERMERCADO BOM GAROTO SECO", "fantasia": "SUPERMERCADO BO"}, {"cod": "70230", "razao": "CASA DA CARNE MARISTA LTDA", "fantasia": "CASA DA CARNE"}, {"cod": "78023", "razao": "DISTRIBUIDORA DE CARNES G3M LTDA", "fantasia": "DISTRIBUIDORA DE"}, {"cod": "77358", "razao": "59.995.655 ERIC RODRIGO JUBE", "fantasia": "CARNES BOI BRASIL"}, {"cod": "75766", "razao": "MIRANTE DELIVERY PIZZARIA LTDA", "fantasia": "MIRANTE FABRICA D"}, {"cod": "69221", "razao": "RESTAURANTE BOCA CHEIA LTDA", "fantasia": "RESTAURANTE BOC"}, {"cod": "78623", "razao": "CHAGAS RESTAURANTE LTDA", "fantasia": "CHURRASCARIA BR"}, {"cod": "83940", "razao": "RESTAURANTE VO EDNI LTDA", "fantasia": "RESTAURANTE VO E"}, {"cod": "84303", "razao": "K B ALIMENTOS LTDA", "fantasia": "FRIGORIFICO LIDER"}, {"cod": "82058", "razao": "BAR E RESTAURANTE GLORIA LTDA", "fantasia": "RESTAURANTE GLO"}, {"cod": "70023", "razao": "ANGELA MARIA SOARES DA CRUZ MILO", "fantasia": "RESTAURANTE MAU"}, {"cod": "79481", "razao": "53.916.958 FERNANDO ARAUJO PEREIR", "fantasia": "POINT LANCHES"}, {"cod": "87602", "razao": "PET SHOP CASINHA DO PET LTDA", "fantasia": "CASINHA DO PET"}, {"cod": "77752", "razao": "TEMPERE REFEIÇOES COLETIVAS LTD", "fantasia": "TEMPERE"}, {"cod": "81821", "razao": "62.707.684 ARTHUR LAIA COSTA", "fantasia": "PIZZARIA SAGAZ DE"}, {"cod": "82663", "razao": "62.626.094 CAUE PIRES LAIA", "fantasia": "PIZZARIA SAGAZ 2"}, {"cod": "81872", "razao": "ELISANGELA ARAUJO DE SOUZA 02464", "fantasia": "QUERO MAIS"}, {"cod": "13509", "razao": "CAMPINAS FRIOS - EIRELI - ME", "fantasia": "CAMPINAS FRIOS"}, {"cod": "76534", "razao": "SABORES DA RUA LTDA", "fantasia": "SABORES DA RUA"}, {"cod": "35683", "razao": "CASA DE CARNES @ DO BOI LTDA", "fantasia": "CASA DE CARNES @"}, {"cod": "40755", "razao": "EMPORIO CENTRO OESTE CARNES EIR", "fantasia": "CENTRO OESTE CA"}, {"cod": "37758", "razao": "NUNES ALIMENTOS EIRELI", "fantasia": "CASA DE CARNE DO"}, {"cod": "753", "razao": "C E C CASA CARNES LTDA", "fantasia": "CASA CARNES M E M"}, {"cod": "2518", "razao": "SERRA DOURADA DISTRIBUIDORA DE", "fantasia": "SERRA DOURADA D"}, {"cod": "66195", "razao": "NUTRIR REFEIÇÕES COLETIVAS LTDA", "fantasia": "NUTRIR REFEIÇOES"}, {"cod": "11192", "razao": "KAMATO COMERCIAL DE ALIMENTOS L", "fantasia": "KAMATO SUP."}, {"cod": "10727", "razao": "FRIGO CASTRO COMERCIO REP FRIOS", "fantasia": "FRIOS & CIA"}, {"cod": "75784", "razao": "CIRIOMAR ALVES FERREIRA- ME", "fantasia": "DOM CIRUS"}, {"cod": "69288", "razao": "MUCLIFS BAR E RESTAURANTE LTDA", "fantasia": "MUCLIFS BAR"}, {"cod": "12919", "razao": "PAULO CESAR DE ARAUJO - ME", "fantasia": "CEBOLAO HORTI-FR"}, {"cod": "22279", "razao": "VERDURAO R 11 LTDA", "fantasia": "VERDURAO R 11"}, {"cod": "12677", "razao": "OFICINA COMERCIO DA CARNE LTDA -", "fantasia": "OFICINA DA CARNE"}, {"cod": "45338", "razao": "PADRAO OESTE SUPERMERCADO LTD", "fantasia": "PADRAO SUP."}, {"cod": "53588", "razao": "CASA DE CARNE E EMPORIO RODRIGU", "fantasia": "EMPORIO RODRIGU"}, {"cod": "38626", "razao": "EMPORIO PICANHA GRILL LTDA", "fantasia": "EMPORIO PICANHA"}, {"cod": "81822", "razao": "PABLO ROCHA CASA DE CARNES LTDA", "fantasia": "EMPORIO RODRIGU"}, {"cod": "78167", "razao": "59.502.681 HERIKA MOREIRA DA COSTA", "fantasia": "CONVENINCIA COST"}, {"cod": "22993", "razao": "CASA DE FRANGO E FRIOS EIRELI", "fantasia": "CASA DO FRANGO"}, {"cod": "860", "razao": "OSMAR MERCEARIA LTDA - ME", "fantasia": "MERCEARIA ALEXAN"}]};
+const CHAVE = 'telefones-' + DADOS.rca + '-v1';
+let tels = {};
+try { tels = JSON.parse(localStorage.getItem(CHAVE) || '{}') || {}; } catch (e) { tels = {}; }
+let filtro = 'todos';
+DADOS.clientes.forEach((c, i) => { c.i = i; });
+
+function esc(s) { return String(s || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
+function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(tels)); } catch (e) { /* aparelho sem armazenamento */ } }
+function nome(c) { return c.fantasia || c.razao; }
+function digitos(s) {
+  let d = String(s || '').replace(/\D/g, '').replace(/^0+/, '');
+  if (d.length > 11 && d.startsWith('55')) d = d.slice(2);  // colou com +55
+  return d.slice(0, 11);
+}
+
+// (62) 99999-9999 · (62) 3333-3333 · formata enquanto digita
+function formatar(d) {
+  if (!d) return '';
+  if (d.length <= 2) return '(' + d;
+  const ddd = d.slice(0, 2), r = d.slice(2);
+  if (r.length <= 4) return `(${ddd}) ${r}`;
+  const corte = d.length === 11 ? 7 : 6;
+  return `(${ddd}) ${d.slice(2, corte)}-${d.slice(corte)}`;
+}
+// ok = DDD válido + fixo (10 dígitos) ou celular começando com 9 (11 dígitos)
+function situacao(d) {
+  if (!d) return '';
+  const ddd = +d.slice(0, 2);
+  if (d.length === 11 && ddd >= 11 && d[2] === '9') return 'ok';
+  if (d.length === 10 && ddd >= 11 && /[2-5]/.test(d[2])) return 'ok';
+  return 'erro';
+}
+function motivo(d) {
+  if (d.length < 10) return d.length <= 9 && d.length >= 8 ? 'Falta o DDD' : 'Incompleto';
+  if (+d.slice(0, 2) < 11) return 'DDD errado';
+  if (d.length === 10 && /[6-9]/.test(d[2])) return 'Falta o 9';
+  return 'Confira';
+}
+function selo(d) { const s = situacao(d); return s === 'ok' ? '✓ Ok' : s === 'erro' ? motivo(d) : ''; }
+
+function visivel(c) {
+  const s = situacao(tels[c.cod]);
+  if (filtro === 'falta' && s === 'ok') return false;
+  if (filtro === 'ok' && s !== 'ok') return false;
+  if (filtro === 'erro' && s !== 'erro') return false;
+  const q = document.getElementById('busca').value.trim().toLowerCase();
+  if (!q) return true;
+  return [c.cod, c.fantasia, c.razao, tels[c.cod] || ''].join(' ').toLowerCase().includes(q);
+}
+
+function cartao(c) {
+  const d = tels[c.cod] || '';
+  return `<div class="cli ${situacao(d)}" data-cod="${esc(c.cod)}">
+    <div class="l1"><span class="cod">${esc(c.cod)}</span><span class="fant">${esc(nome(c))}</span></div>
+    <div class="razao">${esc(c.razao)}</div>
+    <div class="campo">
+      <input type="tel" inputmode="tel" autocomplete="off" enterkeyhint="next" placeholder="(62) 99999-9999"
+             value="${esc(formatar(d))}" aria-label="Telefone de ${esc(nome(c))}">
+      <span class="selo" aria-live="polite">${esc(selo(d))}</span>
+    </div></div>`;
+}
+
+function desenhar() {
+  const ordem = document.getElementById('ordem').value;
+  const cs = DADOS.clientes.filter(visivel);
+  if (ordem === 'nome') cs.sort((a, b) => nome(a).localeCompare(nome(b), 'pt-BR'));
+  else if (ordem === 'cod') cs.sort((a, b) => +a.cod - +b.cod);
+  else cs.sort((a, b) => a.i - b.i);
+  const lista = document.getElementById('lista');
+  lista.innerHTML = cs.length ? cs.map(cartao).join('') : '<p class="vazio">Nenhum cliente neste filtro.</p>';
+  contar();
+}
+
+function contar() {
+  const s = DADOS.clientes.map(c => situacao(tels[c.cod]));
+  const nok = s.filter(x => x === 'ok').length, nerro = s.filter(x => x === 'erro').length;
+  const nf = DADOS.clientes.length - nok;
+  document.getElementById('n-ok').textContent = nok;
+  document.getElementById('n-falta').textContent = nf;
+  document.getElementById('n-erro').textContent = nerro;
+  document.getElementById('barra').style.width = (100 * nok / DADOS.clientes.length) + '%';
+  const err = nerro ? ` <b>${nerro}</b> incompleto${nerro === 1 ? '' : 's'}: confira.` : '';
+  document.getElementById('resumo').innerHTML = nf
+    ? `<b>${nok}</b> de ${DADOS.clientes.length} com telefone.${err}`
+    : `<b>Pronto:</b> todos os ${nok} clientes com telefone. Envie a lista.`;
+}
+
+// O WhatsApp leva só os telefones completos: cód · razão · fantasia · telefone
+function texto() {
+  const r = DADOS.clientes.filter(c => situacao(tels[c.cod]) === 'ok');
+  const linhas = [`*TELEFONES DOS CLIENTES · RCA ${DADOS.rca} ${DADOS.nome.toUpperCase()}*`,
+                  `${DADOS.sup} · ${r.length} de ${DADOS.clientes.length} clientes`, '',
+                  'Cód | Razão | Fantasia | Telefone'];
+  r.forEach(c => linhas.push(`${c.cod} | ${c.razao} | ${c.fantasia} | ${formatar(tels[c.cod])}`));
+  return linhas.join('\n');
+}
+function podeEnviar() {
+  const nok = DADOS.clientes.filter(c => situacao(tels[c.cod]) === 'ok').length;
+  const nerro = DADOS.clientes.filter(c => situacao(tels[c.cod]) === 'erro').length;
+  if (!nok) { aviso('Nenhum telefone completo ainda'); return false; }
+  if (nerro && !confirm(`${nerro} telefone${nerro === 1 ? ' está incompleto e não vai' : 's estão incompletos e não vão'} na lista. Enviar assim mesmo?`)) return false;
+  return true;
+}
+
+function aviso(t) { const a = document.getElementById('aviso'); a.textContent = t; a.classList.add('on'); setTimeout(() => a.classList.remove('on'), 1800); }
+
+const lista = document.getElementById('lista');
+lista.addEventListener('input', ev => {
+  const inp = ev.target.closest('input[type="tel"]'); if (!inp) return;
+  const card = inp.closest('.cli');
+  const cod = card.dataset.cod;
+  const d = digitos(inp.value);
+  if (d) tels[cod] = d; else delete tels[cod];
+  salvar();
+  inp.value = formatar(d);
+  card.classList.remove('ok', 'erro');
+  // enquanto digita não pinta de vermelho; só marca ok quando completa
+  if (situacao(d) === 'ok') card.classList.add('ok');
+  card.querySelector('.selo').textContent = situacao(d) === 'ok' ? '✓ Ok' : '';
+  contar();
+});
+lista.addEventListener('focusout', ev => {
+  const inp = ev.target.closest('input[type="tel"]'); if (!inp) return;
+  const card = inp.closest('.cli');
+  const d = tels[card.dataset.cod] || '';
+  card.classList.remove('ok', 'erro');
+  if (situacao(d)) card.classList.add(situacao(d));
+  card.querySelector('.selo').textContent = selo(d);
+});
+lista.addEventListener('keydown', ev => {
+  if (ev.key !== 'Enter') return;
+  const inp = ev.target.closest('input[type="tel"]'); if (!inp) return;
+  ev.preventDefault();
+  const todos = [...lista.querySelectorAll('input[type="tel"]')];
+  const prox = todos[todos.indexOf(inp) + 1];
+  if (prox) { prox.focus(); prox.scrollIntoView({ block: 'center', behavior: 'smooth' }); } else inp.blur();
+});
+document.querySelectorAll('.filtros button').forEach(b => b.addEventListener('click', () => {
+  filtro = b.dataset.f;
+  document.querySelectorAll('.filtros button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  desenhar();
+}));
+document.getElementById('busca').addEventListener('input', desenhar);
+document.getElementById('ordem').addEventListener('change', desenhar);
+document.getElementById('enviar').addEventListener('click', () => {
+  if (!podeEnviar()) return;
+  window.open('https://wa.me/?text=' + encodeURIComponent(texto()), '_blank');
+});
+document.getElementById('copiar').addEventListener('click', async () => {
+  if (!podeEnviar()) return;
+  try { await navigator.clipboard.writeText(texto()); aviso('Copiado'); }
+  catch (e) { const t = document.createElement('textarea'); t.value = texto(); document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); aviso('Copiado'); }
+});
+document.getElementById('zerar').addEventListener('click', () => {
+  if (!confirm('Apagar todos os telefones digitados neste aparelho?')) return;
+  tels = {}; salvar(); desenhar();
+});
+desenhar();
+</script>
+</body>
+</html>
